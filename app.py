@@ -1,6 +1,8 @@
 import streamlit as st
 import pickle 
 import pandas as pd
+from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.feature_extraction.text import TfidfVectorizer
 import requests
 
 
@@ -12,6 +14,18 @@ def download_nltk_data():
     nltk.download('omw-1.4')
 
 download_nltk_data()
+
+
+@st.cache_resource
+def build_similarity():
+    tfidf = TfidfVectorizer(max_features=5000)
+    vectors = tfidf.fit_transform(movies['tags'])
+    return cosine_similarity(vectors)
+
+
+movies_dict = pickle.load(open('movies_dict.pkl', 'rb'))
+movies= pd.DataFrame(movies_dict)
+similarity = build_similarity()
 
 
 def fetch_poster(movie_id):
@@ -42,9 +56,7 @@ def recommend(movie):
         recommended_movies_posters.append(fetch_poster(movie_id))
     return recomemnded_movies,recommended_movies_posters
 
-movies_dict = pickle.load(open('movies_dict.pkl', 'rb'))
-similarity=pickle.load(open('similarity.pkl','rb'))
-movies= pd.DataFrame(movies_dict)
+
 st.title("Movie Recommender System")
 
 selected_movie_name=st.selectbox("Select a movie:", movies['title'].values)
